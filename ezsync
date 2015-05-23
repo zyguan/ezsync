@@ -20,7 +20,7 @@ elif [[ -s "$HOME/.sync.conf" ]]; then
 elif [[ -s "$bin/sync.conf" ]]; then
     source "$bin/sync.conf"
 else
-    echo "WARN: no sync.conf in current directory, use $HOSTS:$DST."
+    echo "WARN: couldn't load sync.conf, use $HOSTS:$DST."
 fi
 
 SRC=$(readlink -m "$1")
