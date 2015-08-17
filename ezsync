@@ -3,11 +3,6 @@
 bin=`dirname "${BASH_SOURCE-$0}"`
 bin=`cd "$bin"; pwd`
 
-if [ -z "$1" ]; then
-    echo "USAGE: $0 TARGET [ARGS]"
-    exit -1
-fi
-
 # set default config
 DST="/tmp"
 HOSTS="localhost"
@@ -23,11 +18,11 @@ else
     echo "WARN: couldn't load sync.conf, use $HOSTS:$DST."
 fi
 
-SRC=$(readlink -m "$1")
-shift
+SRC=$(pwd)
 
+[[ -f $SRC/.rsync-filter ]] && FILTER_OPT="-F $SRC/.rsync-filter"
 
 for host in ${HOSTS}; do
-    echo "rsync $2 $SRC to $host:$DST"
-    rsync -rta $@ --rsync-path="mkdir -p $DST && rsync" $SRC $host:$DST
+    echo "rsync: $SRC => $host:$DST"
+    rsync -a $FILTER_OPT $@ --rsync-path="mkdir -p $DST && rsync" $SRC/ $host:$DST
 done
