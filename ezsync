@@ -8,14 +8,14 @@ DST="/tmp"
 HOSTS="localhost"
 
 # load config
-if [[ -s "./sync.conf" ]]; then
-    source "./sync.conf"
-elif [[ -s "$HOME/.sync.conf" ]]; then
-    source "$HOME/.sync.conf"
-elif [[ -s "$bin/sync.conf" ]]; then
-    source "$bin/sync.conf"
+if [[ -s "./.ezsync.conf" ]]; then
+    source "./.ezsync.conf"
+elif [[ -s "$HOME/.ezsync.conf" ]]; then
+    source "$HOME/.ezsync.conf"
+elif [[ -s "$bin/.ezsync.conf" ]]; then
+    source "$bin/.ezsync.conf"
 else
-    echo "WARN: couldn't load sync.conf, use $HOSTS:$DST."
+    echo "WARN: couldn't load .ezsync.conf, use $HOSTS:$DST."
 fi
 
 SRC=$(pwd)
@@ -23,6 +23,6 @@ SRC=$(pwd)
 [[ -f $SRC/.rsync-filter ]] && FILTER_OPT="-F $SRC/.rsync-filter"
 
 for host in ${HOSTS}; do
-    echo "rsync: $SRC => $host:$DST"
+    echo "sync: $SRC => $host:$DST"
     rsync -a $FILTER_OPT $@ --rsync-path="mkdir -p $DST && rsync" $SRC/ $host:$DST
 done
