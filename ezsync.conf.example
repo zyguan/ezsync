@@ -1,3 +1,14 @@
+# basic usage
 DST="/tmp/ezsync"
 HOSTS="$USER@localhost"
-#HOSTS=`echo zyguan@192.168.1.12{0..9}`
+
+# multiple hosts
+HOSTS=`echo zyguan@192.168.1.12{0..9}`
+
+# sync subdirectory with additional args
+ARGS="--exclude /conf -v"
+SRC=build/hadoop-0.20.2/
+DST=/usr/local/hadoop/0.20.2
+
+# dry-run
+DEBUG=true

@@ -18,11 +18,15 @@ else
     echo "WARN: couldn't load .ezsync.conf, use $HOSTS:$DST."
 fi
 
-SRC=$(pwd)
+SRC=$(readlink -f $(pwd)/$SRC)
 
 [[ -f $SRC/.rsync-filter ]] && FILTER_OPT="-F $SRC/.rsync-filter"
 
 for host in ${HOSTS}; do
-    echo "sync: $SRC => $host:$DST"
-    rsync -a $FILTER_OPT $@ --rsync-path="mkdir -p $DST && rsync" $SRC/ $host:$DST
+    if [ -z $DEBUG ]; then
+        echo "sync: $SRC => $host:$DST"
+        rsync -az $FILTER_OPT $ARGS $@ --rsync-path="mkdir -p $DST && rsync" $SRC/ $host:$DST
+    else
+        echo "DEBUG: rsync -az $FILTER_OPT $ARGS $@ $SRC/ $host:$DST"
+    fi
 done
