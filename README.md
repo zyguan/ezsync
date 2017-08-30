@@ -1,11 +1,15 @@
-# Introduction #
+# ezsync
 
-This is an easy sync script to help you sync files to multi hosts. The
-script is actually a wrapper of `rsync` command, so please make sure
-you have install `rsync` at first. You can use `.ezsync.conf` to
-specify the behaviour of the script. `ezsync` will search it in the
-current directory firstly, then `$HOME`, and at last the directory of
-the script. Thus you can have a specific config file for your current
-workspace and keep a global config file for daily use.
+**ezsync** is a simple wrapper of `rsync` command for syncing your directory to multiple remote hosts easily. You can use a env file -- `ezsync.env`, to
+define the behaviour of the script. `ezsync` will search for the env file in
+current directory and all it's parents.
 
+## Examples
 
+When `ezsync.env` is missing, current working directory will be sync to `localhost:/tmp`.
+
+![](examples/1.png)
+
+You can perform sync in any subdirectories of your project by putting the env file to your project root directory.
+
+![](examples/2.png)

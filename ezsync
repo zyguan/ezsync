@@ -1,32 +1,80 @@
 #!/usr/bin/env bash
 
-bin=`dirname "${BASH_SOURCE-$0}"`
-bin=`cd "$bin"; pwd`
+abort() {
+  { if [ "$#" -eq 0 ]; then cat -
+    else echo "$(basename "$0"): $*"
+    fi
+  } >&2
+  exit 1
+}
 
-# set default config
-DST="/tmp"
-HOSTS="localhost"
+READLINK=$(type -p greadlink readlink | head -1)
+[ -n "$READLINK" ] || abort "cannot find readlink - are you missing GNU coreutils?"
 
-# load config
-if [[ -s "./.ezsync.conf" ]]; then
-    source "./.ezsync.conf"
-elif [[ -s "$HOME/.ezsync.conf" ]]; then
-    source "$HOME/.ezsync.conf"
-elif [[ -s "$bin/.ezsync.conf" ]]; then
-    source "$bin/.ezsync.conf"
+resolve_link() {
+  $READLINK "$1"
+}
+
+abs_dirname() {
+  local cwd="$PWD"
+  local path="$1"
+
+  while [ -n "$path" ]; do
+    cd "${path%/*}"
+    local name="${path##*/}"
+    path="$(resolve_link "$name" || true)"
+  done
+
+  pwd
+  cd "$cwd"
+}
+
+upsearch() {
+  local slashes=${PWD//[^\/]/}
+  local directory="$PWD"
+  for (( n=${#slashes}; n>0; --n ))
+  do
+    test -f "$directory/$1" && echo "$(abs_dirname "$directory/$1")/$1" && return
+    directory="$directory/.."
+  done
+}
+
+rsync_cmd="$(command -v rsync || true)"
+[ -n "$rsync_cmd" ] || abort "no such command \`rsync'"
+
+# load env settings
+if [ "$1" = -e ]; then
+  shift
+  [ -f "$1" ] && . "$1" || abort "no such file \`$1'"
+  ezsync_env=$1
+  shift
 else
-    echo "WARN: couldn't load .ezsync.conf, use $HOSTS:$DST."
+  ezsync_env="$(upsearch ezsync.env)"
+  [ -n "$ezsync_env" ] && . "$ezsync_env" \
+      || echo "WARN: can not locate a env file"
 fi
 
-SRC=$(readlink -f $(pwd)/$SRC)
+if ! [[ "$SRC" = /* ]]; then
+  if [ -n "$ezsync_env" ]; then
+    base_dir=$(dirname "$ezsync_env")
+  else
+    base_dir=$(pwd)
+  fi
+  SRC=$($READLINK -f "$base_dir")${SRC:+/"$SRC"}
+else
+  SRC=$($READLINK -f "$SRC")
+fi
+DST=${DST:-"/tmp"}
+HOSTS=${HOSTS:-"localhost"}
 
-[[ -f $SRC/.rsync-filter ]] && FILTER_OPT="-F $SRC/.rsync-filter"
+[ -f "$SRC/.rsync-filter" ] && FILTER_OPT="-F $SRC/.rsync-filter"
 
+# run rsync sequentially
 for host in ${HOSTS}; do
-    if [ -z $DEBUG ]; then
+    if [ -z "$DEBUG" ]; then
         echo "sync: $SRC => $host:$DST"
-        rsync -az $FILTER_OPT $ARGS $@ --rsync-path="mkdir -p $DST && rsync" $SRC/ $host:$DST
+        $rsync_cmd -az $FILTER_OPT $ARGS $@ --rsync-path="mkdir -p $DST && rsync" $SRC $host:$DST
     else
-        echo "DEBUG: rsync -az $FILTER_OPT $ARGS $@ $SRC/ $host:$DST"
+        echo "DEBUG: rsync -az $FILTER_OPT $ARGS $@ $SRC $host:$DST"
     fi
 done
